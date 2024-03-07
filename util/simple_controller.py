@@ -146,7 +146,6 @@ def program_switch(addr, device_id, sw_conf_file, workdir, proto_dump_fpath, run
                 insertCloneGroupEntry(sw, entry, p4info_helper)
 
     finally:
-        print("FInishing...")
         sw.shutdown()
 
 
