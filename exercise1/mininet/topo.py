@@ -32,18 +32,15 @@ class IPv4Host(Host):
 
     def config(self, mac=None, ip=None, defaultRoute=None, lo='up', gw=None,
                gwMac=None, **_params):
-        print("test1")
         super(IPv4Host, self).config(mac, ip, defaultRoute, lo, **_params)
-        print("test2")
         self.cmd('ip -4 addr flush dev %s' % self.defaultIntf())
         self.cmd('ip -6 addr flush dev %s' % self.defaultIntf())
         self.cmd('ip -4 link set up %s' % self.defaultIntf())
         self.cmd('ip -4 addr add %s dev %s' % (ip, self.defaultIntf()))
-        print("test3")
         if gw:
             self.cmd('ip -4 route add default via %s' % gw)
             if gwMac:
-                self.cmd("arp -i eth0 -s %s %s" %(gw, gwMac))
+                self.cmd("arp -s %s %s" %(gw, gwMac))
         # Disable offload
         # for attr in ["rx", "tx", "sg"]:
         #     cmd = "/sbin/ethtool --offload %s %s off" % (
@@ -61,7 +58,6 @@ class TutorialTopo(Topo):
 
     def __init__(self, *args, **kwargs):
         Topo.__init__(self, *args, **kwargs)
-        print("test1")
 
         # Leaves
         # gRPC port 50001
@@ -78,29 +74,27 @@ class TutorialTopo(Topo):
 
         # IPv4 hosts attached to leaf 1
         h1 = self.addHost('h1', cls=IPv4Host, mac="08:00:00:00:01:11",
-                           ip='10.0.1.11/24', gw='10.0.1.10', gwMac="08:00:00:00:01:10" )
+                           ip='10.0.1.1/24', gw='10.0.1.10', gwMac="08:00:00:00:01:00" )
         h2 = self.addHost('h2', cls=IPv4Host, mac="08:00:00:00:02:22",
-                           ip='20.0.2.22/24', gw='10.0.2.20', gwMac="08:00:00:00:02:20" )
+                           ip='10.0.2.2/24', gw='10.0.2.20', gwMac="08:00:00:00:02:00" )
         h3 = self.addHost('h3', cls=IPv4Host, mac="08:00:00:00:03:33",
-                           ip='10.0.3.33/24', gw='10.0.3.30', gwMac="08:00:00:00:03:30" )
+                           ip='10.0.3.3/24', gw='10.0.3.30', gwMac="08:00:00:00:03:00" )
         h4 = self.addHost('h4', cls=IPv4Host, mac="08:00:00:00:04:44",
-                           ip='10.0.4.44/24', gw='10.0.4.40', gwMac="08:00:00:00:04:40")
+                           ip='10.0.4.4/24', gw='10.0.4.40', gwMac="08:00:00:00:04:00")
 
 
-        self.addLink(h1, s1)  # s1 - port 1
-        self.addLink(h2, s1)  # s1 - port 2
-        self.addLink(h3, s2)  # s2 - port 1
-        self.addLink(h4, s2)  # s2 - port 2
-        self.addLink(s1, s3)
-        self.addLink(s1, s4)
-        self.addLink(s2, s3)
-        self.addLink(s2, s4)
+        self.addLink(h1, s1, port2=1)  # s1 - port 1
+        self.addLink(h2, s1, port2=2)  # s1 - port 2
+        self.addLink(h3, s2, port2=1)  # s2 - port 1
+        self.addLink(h4, s2, port2=2)  # s2 - port 2
+        self.addLink(s1, s3, port1=3, port2=1)
+        self.addLink(s1, s4, port1=4, port2=2)
+        self.addLink(s2, s3, port1=4, port2=2)
+        self.addLink(s2, s4, port1=3, port2=1)
 
 def main():
     net = Mininet(topo=TutorialTopo(), controller=None)
-    print("prestart")
     net.start()
-    print("poststart")
     CLI(net)
     net.stop()
     print('#' * 80)
