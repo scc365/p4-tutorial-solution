@@ -1,29 +1,12 @@
 # Implementing Basic Forwarding
 
-## Toolchain
-
-In order to simplify the p4 development, we provide you with a Makefile that
-will allow you to automate p4 development using Docker containers. Basic action
-are available through the provide Makfile. The action that you can execute are:
-
-- _make p4-build_: This action will compile the file p4src/main.p4 and generate
-  the required switch pipeline files in the folder `p4src/build`, i.e.,
-  p4src/build/bmv2.json (The specification file for the switch), and
-  p4src/build/p4info.txt (Required to generate the p4 bindinds., and
-  p4src/build/p4info.txt ())
-- _make build-proto_: Generate the python binding to run a GRPC client that can
-  connec tothe P4 switch.
-- _make start, make stop, make restart_:
-
 ## Introduction
 
 The objective of this exercise is to write a P4 program that implements basic
 forwarding. To keep things simple, we will just implement forwarding for IPv4.
 
 With IPv4 forwarding, the switch must perform the following actions for every
-packet: (i) update the source and destination MAC addresses, (ii) decrement the
-time-to-live (TTL) in the IP header, and (iii) forward the packet out the
-appropriate port.
+packet: (i) update the source and destination MAC addresses, (ii) decrease the time-to-live (TTL) in the IP header, and (iii) forward the packet out of the appropriate port.
 
 Your switch will have a single table, which the control plane will populate with
 static rules. Each rule will map an IP address to the MAC address and output
@@ -37,7 +20,7 @@ fat-tree topology and henceforth referred to as pod-topo:
 Our P4 program will be written for the V1Model architecture implemented on
 P4.org's bmv2 software switch. The architecture file for the V1Model can be
 found at:
-(p4c/p4include/v1model.p4)[https://github.com/p4lang/p4c/blob/main/p4include/v1model.p4].
+[p4c/p4include/v1model.p4](https://github.com/p4lang/p4c/blob/main/p4include/v1model.p4).
 This file describes the interfaces of the P4 programmable elements in the
 architecture, the supported externs, as well as the architecture's standard
 metadata fields. We encourage you to take a look at it.
@@ -45,7 +28,7 @@ metadata fields. We encourage you to take a look at it.
 > **Spoiler alert:** There is a reference solution in the `solution`
 > sub-directory. Feel free to compare your implementation to the reference.
 
-## Prerequisite
+## Prerequisites
 
 ## Step 1: Run the (incomplete) starter code
 
@@ -60,6 +43,7 @@ Mininet to test its behavior.
 
    ```bash
    make p4-build
+   make proto-build
    make start
    ```
 
@@ -73,22 +57,27 @@ Mininet to test its behavior.
 
 2. You can now access the Mininet command prompt with the command `make mn-cli`.
    Try to ping between hosts in the topology:
+
    ```bash
    mininet> h1 ping h2
    mininet> pingall
    ```
+
 3. Press Ctrl+D leave to detach from the Mininet command line. Then, to stop
    mininet:
+
    ```bash
    make stop
    ```
+
    And to delete all pcaps, build files, and logs:
+
    ```bash
    make clean
    ```
 
 The ping failed because each switch is programmed according to `main.p4`, which
-drops all packets on arrival. Your job is to extend this file so it forwards
+drops all packets on arrival. Your job is to extend this file, so it forwards
 packets.
 
 ### A note about the control plane
@@ -101,14 +90,14 @@ rule.
 In this exercise, we have already implemented the control plane logic for you.
 As part of bringing up the Mininet instance, the `make start` command will
 install packet-processing rules in the tables of each switch. These are defined
-in the `sX-runtime.json` files, where `X` corresponds to the switch number.
+in the `mininet/sX-runtime.json` files, where `X` corresponds to the switch number.
 
 **Important:** We use P4Runtime to install the control plane rules. The content
-of files `sX-runtime.json` refer to specific names of tables, keys, and actions,
+of files `sX-runtime.json` refers to specific names of tables, keys, and actions,
 as defined in the P4Info file produced by the compiler (look for the file
-`build/basic.p4.p4info.txt` after executing `make run`). Any changes in the P4
+`p4src/build/.p4info.txt` after executing `make p4-build`). Any changes in the P4
 program that add or rename tables, keys, or actions will need to be reflected in
-these `sX-runtime.json` files.
+these `sX-runtime.json` files. We provide a minimal P4 GRPC python client under `util/simple_conrtoller.py`
 
 ## Step 2: Implement L3 forwarding
 
@@ -169,20 +158,20 @@ There are several problems that might manifest as you develop your program:
    the error emitted from the compiler and halt.
 
 2. `main.p4` might compile but fail to support the control plane rules in the
-   `s1-runtime.json` through `s3-runtime.json` files that `make run` tries to
-   install using P4Runtime. In this case, `make run` will report errors if
+   `s1-runtime.json` through `s3-runtime.json` files that `make start` tries to
+   install using P4Runtime. In this case, `make start` will report errors if
    control plane rules cannot be installed. Use these error messages to fix your
-   `basic.p4` implementation.
+   `main.p4` implementation.
 
-3. `basic.p4` might compile, and the control plane rules might be installed, but
+3. `main.p4` might compile, and the control plane rules might be installed, but
    the switch might not process packets in the desired way. The `logs/sX.log`
-   files contain detailed logs that describing how each switch processes each
+   files contain detailed logs that describe how each switch processes each
    packet. The output is detailed and can help pinpoint logic errors in your
    implementation.
 
 #### Cleaning up Mininet
 
-In the latter two cases above, `make run` may leave a Mininet instance running
+In the latter two cases above, `make start` may leave a Mininet instance running
 in the background. Use the following command to clean up these instances:
 
 ```bash
@@ -194,7 +183,7 @@ make stop
 The documentation for P4_16 and P4Runtime is available
 [here](https://p4.org/specs/)
 
-All excercises in this repository use the v1model architecture, the
+All exercises in this repository use the v1model architecture, the
 documentation for which is available at:
 
 1. The BMv2 Simple Switch target document accessible

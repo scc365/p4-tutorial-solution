@@ -69,3 +69,6 @@ proto-build:
 		../proto/google/rpc/status.proto ../proto/google/rpc/code.proto \
 		../proto/p4/tmp/p4config.proto ../proto/p4/server/v1/config.proto \
 		../proto/p4/v1/p4runtime.proto --python_out=../util/lib/ --grpc_python_out=../util/lib/
+
+clean:
+	rm -r ./tmp/
