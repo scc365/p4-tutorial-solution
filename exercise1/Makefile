@@ -30,9 +30,6 @@ _start:
 	@NGSDN_TOPO_PY=${NGSDN_TOPO_PY} docker-compose -f docker-compose.yml up -d
 	sleep 10
 	PYTHONPATH=${PYTHONPATH} python3 ../util/simple_controller.py -a localhost:50001 -d 1 -p /tmp/s1.txt -c mininet/s1-runtime.json
-	PYTHONPATH=${PYTHONPATH} python3 ../util/simple_controller.py -a localhost:50002 -d 1 -p /tmp/s2.txt -c mininet/s2-runtime.json
-	PYTHONPATH=${PYTHONPATH} python3 ../util/simple_controller.py -a localhost:50003 -d 1 -p /tmp/s3.txt -c mininet/s3-runtime.json
-	PYTHONPATH=${PYTHONPATH} python3 ../util/simple_controller.py -a localhost:50004 -d 1 -p /tmp/s4.txt -c mininet/s4-runtime.json
 
 start: NGSDN_TOPO_PY := topo.py
 start: _start
