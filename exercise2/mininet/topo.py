@@ -42,10 +42,10 @@ class IPv4Host(Host):
             if gwMac:
                 self.cmd("arp -s %s %s" %(gw, gwMac))
         # Disable offload
-        # for attr in ["rx", "tx", "sg"]:
-        #     cmd = "/sbin/ethtool --offload %s %s off" % (
-        #         self.defaultIntf(), attr)
-        #     self.cmd(cmd)
+        for attr in ["rx", "tx", "sg"]:
+            cmd = "/sbin/ethtool --offload %s %s off" % (
+                self.defaultIntf(), attr)
+            self.cmd(cmd)
 
         def updateIP():
             return ip.split('/')[0]
@@ -61,7 +61,7 @@ class TutorialTopo(Topo):
 
         # Leaves
         # gRPC port 50001
-        s1 = self.addSwitch('s1', cls=StratumBmv2Switch, cpuport=CPU_PORT)
+        s1 = self.addSwitch('s1', cls=StratumBmv2Switch, loglevel="debug", cpuport=CPU_PORT)
 
         # IPv4 hosts attached to leaf 1
         h1 = self.addHost('h1', cls=IPv4Host, mac="08:00:00:00:01:01",

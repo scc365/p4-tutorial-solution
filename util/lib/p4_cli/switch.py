@@ -114,6 +114,23 @@ class SwitchConnection(object):
             for response in self.client_stub.Read(request):
                 yield response
 
+    def PacketIn(self, dry_run=False, **kwargs):
+        for item in self.stream_msg_resp:
+            if dry_run:
+                print("P4 Runtime PacketIn: ", request)
+            else:
+                return item
+
+    def PacketOut(self, packet, dry_run=False, **kwargs):
+        request = p4runtime_pb2.StreamMessageRequest()
+        request.packet.CopyFrom(packet)
+        if dry_run:
+            print("P4 Runtime: ", request)
+        else:
+            self.requests_stream.put(request)
+            # for item in self.stream_msg_resp:
+            return request
+
     def ReadCounters(self, counter_id=None, index=None, dry_run=False):
         request = p4runtime_pb2.ReadRequest()
         request.device_id = self.device_id

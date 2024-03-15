@@ -9,14 +9,52 @@ import os
 import sys
 from time import sleep
 
+from scapy.all import (
+    Ether,
+    IntField,
+    Packet,
+    StrFixedLenField,
+    XByteField,
+    bind_layers,
+    srp1
+)
+
+class P4calc(Packet):
+    name = "P4calc"
+    fields_desc = [ StrFixedLenField("P", "P", length=1),
+                    StrFixedLenField("Four", "4", length=1),
+                    XByteField("version", 0x01),
+                    StrFixedLenField("op", "+", length=1),
+                    IntField("operand_a", 0),
+                    IntField("operand_b", 0),
+                    IntField("result", 0xDEADBABE)]
+
+bind_layers(Ether, P4calc, type=0x1234)
+
 # Import P4Runtime lib from parent utils dir
 # Probably there's a better way of doing this.
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "utils/"))
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "."))
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../util/"))
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../util/lib/"))
 import p4_cli.bmv2 as bmv2
 from p4_cli.switch import ShutdownAllSwitchConnections
 from p4_cli.convert import encodeNum
 import p4_cli.helper as helper
+
+def readTableRules(p4info_helper, sw):
+    """
+    Reads the table entries from all tables on the switch.
+
+    :param p4info_helper: the P4Info helper
+    :param sw: the switch connection
+    """
+    print('\n----- Reading tables rules for %s -----' % sw.name)
+    for response in sw.ReadTableEntries():
+        for entity in response.entities:
+            entry = entity.table_entry
+            # TODO For extra credit, you can use the p4info_helper to translate
+            #      the IDs in the entry to names
+            print(entry)
+            print('-----')
 
 def printGrpcError(e):
     print("gRPC Error:", e.details(), end="")
@@ -36,7 +74,7 @@ def main(p4info_file_path, bmv2_file_path):
         # Also, dump all P4Runtime messages sent to switch to given txt files.
         s1 = bmv2.Bmv2SwitchConnection(
             name="s0",
-            address="127.0.0.1:51001",
+            address="127.0.0.1:50001",
             device_id=1,
             proto_dump_file="p4runtime.log",
         )
@@ -58,7 +96,7 @@ def main(p4info_file_path, bmv2_file_path):
             print("Forwarding Pipeline added.")
             print(e)
             # Forward all packet to the controller (CPU_PORT 255)
-        writeIpv4Rules(p4info_helper, sw_id=s1, dst_ip_addr="172.16.1.1", port=255)
+
         # read all table rules
         readTableRules(p4info_helper, s1)
         print("Finished reading.")
@@ -69,12 +107,39 @@ def main(p4info_file_path, bmv2_file_path):
                 print("PACKET IN received")
                 #print(packetin)
                 packet = packetin.packet.payload
+                # extract packet headers with scapy
+                a = Ether(packet)
+                tmp = a.src
+                a.src = a.dst
+                a.dst = tmp
+                a.result = a.operand_a * a.operand_b
+                print(a.result)
+                # Construct the packet
                 packetout = p4info_helper.buildPacketOut(
-                    payload=packet,  # send the packet in you received back to output port 3!
+                    payload=a.build(),  # send the packet in you received back to output port 1!
+                    # The value of the metadata field comes from the p4info
+                    # file:
+                    # controller_packet_metadata {
+                    #   preamble {
+                    #     id: 67135753
+                    #     name: "packet_out"
+                    #     alias: "packet_out"
+                    #     annotations: "@controller_header(\"packet_out\")"
+                    #   }
+                    #   metadata {
+                    #     id: 1
+                    #     name: "egress_port"
+                    #     bitwidth: 16
+                    #   }
+                    # }
+                    # type_info {
+                    # }
                     metadata={
-                        1: encodeNum(3, 16),
-                    },  # egress_spec (check @controller_header("packet_out") in the p4 code)
+                        1: encodeNum(1, 16),
+                    },  # egress_port (check @controller_header("packet_out") in the p4 code)
                 )
+
+                res = s1.PacketOut(packetout)
 
     except KeyboardInterrupt:
         print(" Shutting down.")

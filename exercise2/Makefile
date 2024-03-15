@@ -35,7 +35,7 @@ start: NGSDN_TOPO_PY := topo.py
 start: _start
 
 stop:
-	$(info *** Stopping ONOS and Mininet...)
+	$(info *** Stopping Mininet...)
 	@NGSDN_TOPO_PY=foo docker-compose -f docker-compose.yml down -t0
 
 restart: reset start
